@@ -1,0 +1,6 @@
+{
+  "name": "Hasan.lib",
+  "description": "A brutalist open-source component library for the web. Copy-paste components, animated effects, blocks, and full landing templates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
