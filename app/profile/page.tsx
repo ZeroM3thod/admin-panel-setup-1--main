@@ -1,43 +1,63 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Cpu, User, Mail, Calendar, Shield, LogOut, Check, ArrowUpRight } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useAdmin, type Plan } from "@/lib/admin-store"
+import { useAuth, type UserPlan } from "@/lib/auth-store"
 
-/* Mock default user fallback for the prototype */
-const defaultUser = {
-  name: "Alex Chen",
-  email: "alex@sys.int",
-  plan: "free" as Plan,
-  status: "active" as const,
-  joinedAt: "2025-11-02",
-}
-
-const planBadge: Record<Plan, string> = {
+const planBadge: Record<UserPlan, string> = {
   free: "bg-secondary text-foreground",
   pro: "bg-[#ea580c] text-white",
   professional: "bg-foreground text-background",
 }
 
 export default function ProfilePage() {
-  const { users } = useAdmin()
-  const activeUser = users.find((u) => u.id === "u1") || defaultUser
+  const router = useRouter()
+  const { user, loading, signOut, updateProfile } = useAuth()
 
-  const [name, setName] = useState(activeUser.name)
-  const [email, setEmail] = useState(activeUser.email)
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState("")
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/signin")
+    }
+  }, [user, loading, router])
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name)
+      setEmail(user.email)
+    }
+  }, [user])
 
   const field =
     "w-full border-2 border-foreground bg-background px-3 py-2.5 text-[12px] font-mono outline-none focus:border-[#ea580c] transition-colors"
   const labelCls = "block text-[9px] font-mono uppercase tracking-widest text-muted-foreground mb-2"
 
-  function save(e: React.FormEvent) {
+  async function save(e: React.FormEvent) {
     e.preventDefault()
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setSaveError("")
+    const { error } = await updateProfile({ name, email })
+    if (error) {
+      setSaveError(error)
+    } else {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
+  }
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen dot-grid-bg flex items-center justify-center">
+        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground animate-pulse">Loading profile...</p>
+      </div>
+    )
   }
 
   return (
@@ -49,17 +69,16 @@ export default function ProfilePage() {
         </Link>
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Link
-            href="/signin"
+          <button
+            onClick={signOut}
             className="flex items-center gap-2 border-2 border-foreground px-3 py-2 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/5 transition-colors"
           >
             <LogOut size={12} /> Log Out
-          </Link>
+          </button>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 py-8">
-        {/* Identity header */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -71,27 +90,25 @@ export default function ProfilePage() {
               <User size={28} strokeWidth={1.5} />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="font-pixel text-3xl tracking-tight">{activeUser.name}</h1>
+              <h1 className="font-pixel text-3xl tracking-tight">{user.name}</h1>
               <p className="mt-1 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-                {activeUser.email}
+                {user.email}
               </p>
             </div>
             <span
-              className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest ${planBadge[activeUser.plan]}`}
+              className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest ${planBadge[user.plan]}`}
             >
-              {activeUser.plan} plan
+              {user.plan} plan
             </span>
           </div>
 
-          {/* Stat strip */}
           <div className="grid grid-cols-1 divide-y-2 divide-foreground sm:grid-cols-3 sm:divide-x-2 sm:divide-y-0">
-            <Stat icon={Shield} label="Status" value={activeUser.status} />
-            <Stat icon={Calendar} label="Joined" value={activeUser.joinedAt} />
-            <Stat icon={Mail} label="Verified" value="Yes" />
+            <Stat icon={Shield} label="Status" value={user.status} />
+            <Stat icon={Calendar} label="Joined" value={user.joinedAt} />
+            <Stat icon={Mail} label="Verified" value={user.emailVerified ? "Yes" : "No"} />
           </div>
         </motion.div>
 
-        {/* Account settings */}
         <motion.form
           onSubmit={save}
           initial={{ opacity: 0, y: 16 }}
@@ -105,6 +122,11 @@ export default function ProfilePage() {
             </span>
           </div>
           <div className="space-y-4 px-6 py-6">
+            {saveError && (
+              <div className="border-2 border-destructive p-3 bg-destructive/5">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-destructive">{saveError}</span>
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className={labelCls}>{"// Full Name"}</label>
@@ -135,7 +157,6 @@ export default function ProfilePage() {
           </div>
         </motion.form>
 
-        {/* Subscription */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -150,17 +171,17 @@ export default function ProfilePage() {
           <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-6">
             <div>
               <p className="text-[13px] font-mono uppercase tracking-widest">
-                Current: <span className="text-[#ea580c]">{activeUser.plan}</span>
+                Current: <span className="text-[#ea580c]">{user.plan.toUpperCase()}</span>
               </p>
               <p className="mt-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                Manage or upgrade your access tier.
+                {user.plan === "free" ? "Upgrade to unlock all components." : "Manage or upgrade your access tier."}
               </p>
             </div>
             <Link
               href="/payment"
               className="flex items-center gap-2 border-2 border-foreground px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/5 transition-colors"
             >
-              Upgrade Plan <ArrowUpRight size={13} strokeWidth={2} />
+              {user.plan === "free" ? "Upgrade Plan" : "Manage Plan"} <ArrowUpRight size={13} strokeWidth={2} />
             </Link>
           </div>
         </motion.div>

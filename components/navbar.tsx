@@ -9,7 +9,7 @@ const navLinks = [
   { label: "Components", href: "#library" },
   { label: "Animated", href: "#library" },
   { label: "Blocks", href: "#library" },
-  { label: "Templates", href: "/template" },
+  { label: "Templates", href: "/lib" },
 ]
 
 export function Navbar() {
@@ -68,7 +68,7 @@ export function Navbar() {
             >
               Log In
             </Link>
-            <Link href="/pro">
+            <Link href="/lib">
               <motion.span
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

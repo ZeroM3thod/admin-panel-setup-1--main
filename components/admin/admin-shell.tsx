@@ -1,13 +1,16 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState, useEffect, type ReactNode } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Cpu, Users, CreditCard, Boxes, Menu, X, ChevronLeft } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useAuth } from "@/lib/auth-store"
+import { createClient } from "@/lib/supabase"
 
 const NAV = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: Boxes, tag: "// SIDEBAR CONFIG" },
   { href: "/admin/assets", label: "Assets", icon: Boxes, tag: "// SIDEBAR CONFIG" },
   { href: "/admin/user", label: "Users", icon: Users, tag: "// USER MGMT" },
   { href: "/admin/payment", label: "Payments", icon: CreditCard, tag: "// BILLING" },
@@ -15,7 +18,44 @@ const NAV = [
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, loading } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [checkingAdmin, setCheckingAdmin] = useState(true)
+
+  useEffect(() => {
+    async function checkAdminRole() {
+      if (!loading && user) {
+        const supabase = createClient()
+        const { data: adminRole } = await supabase
+          .from("admin_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .single()
+
+        if (adminRole) {
+          setIsAdmin(true)
+        } else {
+          // Not an admin, redirect to home
+          router.push("/")
+        }
+      } else if (!loading && !user) {
+        router.push("/signin")
+      }
+      setCheckingAdmin(false)
+    }
+
+    checkAdminRole()
+  }, [user, loading, router])
+
+  if (loading || checkingAdmin || !user || !isAdmin) {
+    return (
+      <div className="min-h-screen dot-grid-bg flex items-center justify-center">
+        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground animate-pulse">Verifying access...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen w-full">

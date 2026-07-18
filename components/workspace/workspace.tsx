@@ -386,8 +386,8 @@ function LockedCode() {
       <p className="max-w-sm text-[11px] font-mono uppercase tracking-widest text-muted-foreground leading-relaxed mb-6">
         Source code is only available for Pro and Professionals.
       </p>
-      <ArrowButton href="/pro" className="text-[11px]">
-        Upgrade to Pro
+      <ArrowButton href="/lib" className="text-[11px]">
+        Browse Library
       </ArrowButton>
     </div>
   )

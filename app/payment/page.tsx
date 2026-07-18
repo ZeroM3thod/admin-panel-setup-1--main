@@ -10,14 +10,29 @@ import {
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAdmin, CRYPTO_OPTIONS, PLAN_PRICES, type Plan } from "@/lib/admin-store"
+import { useAuth } from "@/lib/auth-store"
 
 function PaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { submitPayment, users } = useAdmin()
+  const { submitPayment } = useAdmin()
+  const { user, loading: authLoading } = useAuth()
 
-  // Get active user to help with default state
-  const activeUser = users.find((u) => u.id === "u1")
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const currentPlan = searchParams.get("plan")
+      const params = currentPlan ? `?plan=${currentPlan}` : ""
+      router.push(`/signin?redirect=/payment${params}`)
+    }
+  }, [user, authLoading, router, searchParams])
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen dot-grid-bg flex items-center justify-center">
+        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground animate-pulse">Checking access...</p>
+      </div>
+    )
+  }
 
   // States
   const [selectedPlan, setSelectedPlan] = useState<"pro" | "professional" | null>(null)
@@ -77,6 +92,9 @@ function PaymentContent() {
     if (selectedPlan) {
       // Submit to the admin store
       submitPayment({
+        userId: user!.id,
+        userName: user!.name,
+        userEmail: user!.email,
         requestedPlan: selectedPlan,
         amount: usdAmount,
         coin: selectedCoin,
@@ -180,12 +198,12 @@ function PaymentContent() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-3xl font-bold font-mono">$19</span>
-                    <span className="text-[10px] font-mono opacity-60">/ MONTH</span>
+                    <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-3xl font-bold font-mono">$6</span>
+                    <span className="text-[10px] font-mono opacity-60">/ LIFETIME</span>
                   </div>
                   <p className="mt-2 text-[10px] font-mono opacity-70 leading-relaxed">
-                    Full library access, direct code downloads, customizable styling.
+                    Full library access, direct code downloads, customizable styling. Lifetime access.
                   </p>
                 </button>
 
@@ -209,12 +227,12 @@ function PaymentContent() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-3xl font-bold font-mono">$49</span>
-                    <span className="text-[10px] font-mono opacity-60">/ MONTH</span>
+                    <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-3xl font-bold font-mono">$10</span>
+                    <span className="text-[10px] font-mono opacity-60">/ LIFETIME</span>
                   </div>
                   <p className="mt-2 text-[10px] font-mono opacity-70 leading-relaxed">
-                    Landing page templates, 5 developer team seats, priority engineering support.
+                    Everything in Pro plus landing templates, team seats, and priority support. Lifetime access.
                   </p>
                 </button>
               </div>

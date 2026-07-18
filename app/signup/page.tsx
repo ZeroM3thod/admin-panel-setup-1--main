@@ -2,20 +2,48 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Cpu, Eye, EyeOff, ArrowRight, Check } from "lucide-react"
+import { Cpu, Eye, EyeOff, ArrowRight, Check, AlertCircle } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useAuth } from "@/lib/auth-store"
 
 export default function SignUpPage() {
+  const router = useRouter()
+  const { signUp } = useAuth()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPw, setShowPw] = useState(false)
   const [agree, setAgree] = useState(false)
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const field =
     "w-full border-2 border-foreground bg-background px-3 py-2.5 text-[12px] font-mono outline-none focus:border-[#ea580c] transition-colors"
   const labelCls = "block text-[9px] font-mono uppercase tracking-widest text-muted-foreground mb-2"
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError("")
+
+    if (!agree) {
+      setError("You must agree to the terms of service")
+      return
+    }
+
+    setLoading(true)
+
+    const { error: signUpError } = await signUp(email, password, name)
+
+    if (signUpError) {
+      setError(signUpError.message)
+      setLoading(false)
+      return
+    }
+
+    router.push("/profile")
+  }
 
   return (
     <div className="min-h-screen dot-grid-bg flex flex-col">
@@ -41,7 +69,14 @@ export default function SignUpPage() {
             <h1 className="mt-2 font-pixel text-3xl tracking-tight">SIGN UP</h1>
           </div>
 
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-4 px-6 py-6">
+          <form onSubmit={handleSubmit} className="space-y-4 px-6 py-6">
+            {error && (
+              <div className="flex items-center gap-2 border-2 border-destructive p-3 bg-destructive/5">
+                <AlertCircle size={14} className="text-destructive shrink-0" />
+                <span className="text-[10px] font-mono uppercase tracking-widest text-destructive">{error}</span>
+              </div>
+            )}
+
             <div>
               <label className={labelCls}>{"// Full Name"}</label>
               <input
@@ -49,6 +84,7 @@ export default function SignUpPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Alex Chen"
                 className={field}
+                required
               />
             </div>
 
@@ -60,6 +96,7 @@ export default function SignUpPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@sys.int"
                 className={field}
+                required
               />
             </div>
 
@@ -72,6 +109,8 @@ export default function SignUpPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className={`${field} pr-11`}
+                  required
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -103,9 +142,10 @@ export default function SignUpPage() {
 
             <button
               type="submit"
-              className="mt-2 flex w-full items-center justify-center gap-2 bg-foreground px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-background hover:bg-[#ea580c] hover:text-white transition-colors"
+              disabled={loading}
+              className="mt-2 flex w-full items-center justify-center gap-2 bg-foreground px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-background hover:bg-[#ea580c] hover:text-white transition-colors disabled:opacity-50"
             >
-              Create Account <ArrowRight size={13} strokeWidth={2} />
+              {loading ? "Creating Account..." : <>Create Account <ArrowRight size={13} strokeWidth={2} /></>}
             </button>
           </form>
 

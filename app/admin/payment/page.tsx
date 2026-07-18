@@ -109,8 +109,8 @@ export default function PaymentPage() {
                 <div className="px-4 py-3 space-y-2">
                   <Row label="Amount" value={`$${p.amount}`} />
                   <Row label="Email" value={p.userEmail} />
-                  <Row label="Method" value={p.method} />
-                  <Row label="Reference" value={p.reference} />
+                  <Row label="Coin" value={`${p.coin} (${p.network})`} />
+                  <Row label="TxID" value={p.txId.slice(0, 30) + "..."} />
                   <Row label="Submitted" value={p.submittedAt} />
                 </div>
 

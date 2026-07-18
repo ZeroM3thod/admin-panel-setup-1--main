@@ -1,0 +1,144 @@
+╔════════════════════════════════════════════════════════════════╗
+║                  ADMIN PANEL QUICK REFERENCE                   ║
+╚════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🚀 INITIAL SETUP (Run Once)                                     │
+└─────────────────────────────────────────────────────────────────┘
+
+1. Open Supabase SQL Editor
+2. Run: setup-super-admin.sql
+3. Log in with: hasan.404.dev@gmail.com
+4. Access: /admin/dashboard
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔑 SUPER ADMIN ACCESS                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+Email: hasan.404.dev@gmail.com
+Role:  super_admin
+
+Access:
+  ✓ /admin/dashboard  → Analytics & Activity Logs
+  ✓ /admin/assets     → Component Management
+  ✓ /admin/payment    → Payment Approval
+  ✓ /admin/user       → User Management
+  ✓ Admin Management  → Add/Remove Admins
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ➕ ADD NEW ADMIN (Quick Command)                                │
+└─────────────────────────────────────────────────────────────────┘
+
+-- Regular Admin
+INSERT INTO admin_roles (user_id, role, granted_by)
+SELECT u.id, 'admin',
+  (SELECT id FROM auth.users WHERE email = 'hasan.404.dev@gmail.com')
+FROM auth.users u WHERE u.email = 'NEW_ADMIN_EMAIL@example.com'
+ON CONFLICT (user_id) DO UPDATE SET role = 'admin';
+
+-- Super Admin
+INSERT INTO admin_roles (user_id, role, granted_by)
+SELECT u.id, 'super_admin',
+  (SELECT id FROM auth.users WHERE email = 'hasan.404.dev@gmail.com')
+FROM auth.users u WHERE u.email = 'NEW_ADMIN_EMAIL@example.com'
+ON CONFLICT (user_id) DO UPDATE SET role = 'super_admin';
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 📋 LIST ALL ADMINS                                              │
+└─────────────────────────────────────────────────────────────────┘
+
+SELECT ar.role, u.email, ar.created_at
+FROM admin_roles ar
+JOIN auth.users u ON ar.user_id = u.id
+ORDER BY ar.created_at DESC;
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🗑️ REMOVE ADMIN                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+DELETE FROM admin_roles 
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'EMAIL@example.com');
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔄 CHANGE ADMIN ROLE                                            │
+└─────────────────────────────────────────────────────────────────┘
+
+-- Promote to Super Admin
+UPDATE admin_roles SET role = 'super_admin'
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'EMAIL@example.com');
+
+-- Demote to Regular Admin
+UPDATE admin_roles SET role = 'admin'
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'EMAIL@example.com');
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔍 FIND USER ID                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+SELECT id, email, created_at 
+FROM auth.users 
+WHERE email = 'EMAIL@example.com';
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ✅ VERIFY SETUP                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+Run: verify-admin-setup.sql
+
+Look for ✓ symbols in all checks
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🐛 TROUBLESHOOTING                                              │
+└─────────────────────────────────────────────────────────────────┘
+
+Can't access /admin?
+  → Check: SELECT * FROM admin_roles WHERE user_id IN 
+           (SELECT id FROM auth.users WHERE email = 'YOUR_EMAIL');
+  → Re-run: setup-super-admin.sql
+
+Getting RLS errors?
+  → Re-run the policy section from setup-super-admin.sql
+
+User doesn't exist?
+  → User must sign up first, then run admin assignment
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 📁 FILE REFERENCE                                               │
+└─────────────────────────────────────────────────────────────────┘
+
+setup-super-admin.sql    → Initial setup (run once)
+add-admin-helper.sql     → Commands for adding admins
+verify-admin-setup.sql   → Check if setup is working
+ADMIN-SETUP-GUIDE.md     → Full documentation
+QUICK-REFERENCE.txt      → This file
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🎯 ADMIN ROLES COMPARISON                                       │
+└─────────────────────────────────────────────────────────────────┘
+
+                          Regular Admin    Super Admin
+View Dashboard               ✓                ✓
+Manage Assets                ✓                ✓
+Approve Payments             ✓                ✓
+Manage Users                 ✓                ✓
+Add/Remove Admins            ✗                ✓
+Change Admin Roles           ✗                ✓
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔒 SECURITY LAYERS                                              │
+└─────────────────────────────────────────────────────────────────┘
+
+1. Middleware (middleware.ts)
+   → Checks admin_roles table before allowing access
+
+2. Client-Side (admin-shell.tsx)
+   → Verifies role and redirects non-admins
+
+3. Database RLS Policies
+   → Enforces permissions at database level
+
+All three layers protect your admin panel!
+
+╔════════════════════════════════════════════════════════════════╗
+║  Need help? Check ADMIN-SETUP-GUIDE.md for full documentation  ║
+╚════════════════════════════════════════════════════════════════╝

@@ -3,6 +3,7 @@ import { JetBrains_Mono } from 'next/font/google'
 import { GeistPixelGrid } from 'geist/font/pixel'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AdminProvider } from '@/lib/admin-store'
+import { AuthProvider } from '@/lib/auth-store'
 
 import './globals.css'
 
@@ -84,9 +85,11 @@ export default function RootLayout({
     <html lang="en" className={`${jetbrainsMono.variable} ${GeistPixelGrid.variable}`} suppressHydrationWarning>
       <body className="font-mono antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
-          <AdminProvider>
-            {children}
-          </AdminProvider>
+          <AuthProvider>
+            <AdminProvider>
+              {children}
+            </AdminProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

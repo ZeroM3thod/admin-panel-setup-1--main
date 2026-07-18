@@ -101,14 +101,14 @@ const TIERS: Tier[] = [
   {
     id: "pro",
     name: "PRO",
-    price: "19",
-    period: "/ month",
+    price: "6",
+    period: "/ lifetime",
     tag: "RECOMMENDED",
-    description: "Full source access. Copy, download, and ship every component.",
+    description: "Full source access. Copy, download, and ship every component. Lifetime access.",
     features: [
       { text: "Everything in Free", included: true },
       { text: "Copy & download source (ZIP)", included: true },
-      { text: "All 147 components", included: true },
+      { text: "All components", included: true },
       { text: "Animated effects library", included: true },
       { text: "Blocks & sections", included: true },
       { text: "Team seats & templates", included: false },
@@ -119,10 +119,10 @@ const TIERS: Tier[] = [
   {
     id: "professional",
     name: "PROFESSIONAL",
-    price: "49",
-    period: "/ month",
+    price: "10",
+    period: "/ lifetime",
     tag: null,
-    description: "For teams and agencies shipping brutalist products at scale.",
+    description: "For teams and agencies shipping brutalist products at scale. Lifetime access.",
     features: [
       { text: "Everything in Pro", included: true },
       { text: "Full landing page templates", included: true },
@@ -252,7 +252,7 @@ function PricingCard({ tier, index }: { tier: Tier; index: number }) {
       {/* CTA */}
       <div className="px-5 pb-5 pt-3">
         <ArrowButton
-          href={tier.id === "free" ? "/template" : `/payment?plan=${tier.id}`}
+          href={tier.id === "free" ? "/lib" : `/payment?plan=${tier.id}`}
           full
           tone={tier.highlighted ? "light" : "dark"}
           className="text-xs"
@@ -312,7 +312,7 @@ export function PricingSection() {
         ))}
       </div>
 
-      {/* Bottom note */}
+          {/* Bottom note */}
       <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -321,7 +321,7 @@ export function PricingSection() {
         className="flex items-center gap-3 mt-6"
       >
         <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground font-mono">
-          {"* All plans billed annually. Cancel anytime. No vendor lock-in."}
+          {"* One-time payment. Lifetime access. No recurring fees."}
         </span>
         <div className="flex-1 border-t border-border" />
       </motion.div>
