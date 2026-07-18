@@ -2,23 +2,17 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Cpu, Eye, EyeOff, ArrowRight, Check, AlertCircle, MailCheck } from "lucide-react"
+import { Cpu, ArrowRight, AlertCircle, MailCheck, ArrowLeft } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth } from "@/lib/auth-store"
 
-export default function SignUpPage() {
-  const router = useRouter()
-  const { signUp } = useAuth()
-  const [name, setName] = useState("")
+export default function ForgotPasswordPage() {
+  const { resetPassword } = useAuth()
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPw, setShowPw] = useState(false)
-  const [agree, setAgree] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
+  const [sent, setSent] = useState(false)
 
   const field =
     "w-full border-2 border-foreground bg-background px-3 py-2.5 text-[12px] font-mono outline-none focus:border-[#ea580c] transition-colors"
@@ -27,24 +21,17 @@ export default function SignUpPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
-
-    if (!agree) {
-      setError("You must agree to the terms of service")
-      return
-    }
-
     setLoading(true)
 
-    const { error: signUpError } = await signUp(email, password, name)
+    const { error: resetError } = await resetPassword(email)
 
-    if (signUpError) {
-      setError(signUpError.message)
+    if (resetError) {
+      setError(resetError.message)
       setLoading(false)
       return
     }
 
-    // Show email confirmation screen instead of redirecting
-    setConfirmed(true)
+    setSent(true)
     setLoading(false)
   }
 
@@ -60,10 +47,10 @@ export default function SignUpPage() {
 
       <main className="flex flex-1 items-center justify-center px-4 py-10">
         <AnimatePresence mode="wait">
-          {confirmed ? (
-            /* ── Email Confirmation Screen ── */
+          {sent ? (
+            /* ── Link Sent Confirmation ── */
             <motion.div
-              key="confirm"
+              key="sent"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
@@ -72,13 +59,12 @@ export default function SignUpPage() {
             >
               <div className="border-b-2 border-foreground px-6 py-5">
                 <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-                  {"// VERIFY NODE"}
+                  {"// RESET LINK DISPATCHED"}
                 </span>
-                <h1 className="mt-2 font-pixel text-3xl tracking-tight">CHECK EMAIL</h1>
+                <h1 className="mt-2 font-pixel text-3xl tracking-tight">LINK SENT</h1>
               </div>
 
               <div className="px-6 py-8 flex flex-col items-center text-center gap-6">
-                {/* Animated icon */}
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -90,7 +76,7 @@ export default function SignUpPage() {
 
                 <div className="space-y-2">
                   <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                    Confirmation link sent to
+                    Reset link dispatched to
                   </p>
                   <p className="text-[13px] font-mono font-bold text-foreground break-all">{email}</p>
                 </div>
@@ -98,8 +84,8 @@ export default function SignUpPage() {
                 <div className="border-2 border-foreground/20 bg-foreground/5 px-4 py-4 text-left w-full space-y-2">
                   {[
                     "Open the email from Hasan.lib",
-                    "Click the confirmation link",
-                    "Return here and sign in",
+                    "Click the password reset link",
+                    "Set your new password",
                   ].map((step, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <span className="text-[9px] font-mono text-[#ea580c] shrink-0 mt-0.5">
@@ -113,13 +99,13 @@ export default function SignUpPage() {
                 </div>
 
                 <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-                  Didn&apos;t receive it? Check your spam folder or{" "}
+                  Link expires in 60 minutes. Didn&apos;t get it?{" "}
                   <button
                     type="button"
-                    onClick={() => setConfirmed(false)}
+                    onClick={() => setSent(false)}
                     className="text-[#ea580c] hover:underline"
                   >
-                    try again
+                    Resend
                   </button>
                 </p>
 
@@ -127,14 +113,14 @@ export default function SignUpPage() {
                   href="/signin"
                   className="flex w-full items-center justify-center gap-2 bg-foreground px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-background hover:bg-[#ea580c] hover:text-white transition-colors"
                 >
-                  Go to Sign In <ArrowRight size={13} strokeWidth={2} />
+                  Back to Sign In <ArrowRight size={13} strokeWidth={2} />
                 </Link>
               </div>
             </motion.div>
           ) : (
-            /* ── Sign Up Form ── */
+            /* ── Forgot Password Form ── */
             <motion.div
-              key="signup"
+              key="form"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
@@ -143,12 +129,16 @@ export default function SignUpPage() {
             >
               <div className="border-b-2 border-foreground px-6 py-5">
                 <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-                  {"// REGISTER NODE"}
+                  {"// RECOVERY PROTOCOL"}
                 </span>
-                <h1 className="mt-2 font-pixel text-3xl tracking-tight">SIGN UP</h1>
+                <h1 className="mt-2 font-pixel text-3xl tracking-tight">RESET PASSWORD</h1>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4 px-6 py-6">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground leading-relaxed">
+                  Enter the email linked to your account. We&apos;ll send a secure reset link automatically.
+                </p>
+
                 {error && (
                   <div className="flex items-center gap-2 border-2 border-destructive p-3 bg-destructive/5">
                     <AlertCircle size={14} className="text-destructive shrink-0" />
@@ -157,18 +147,7 @@ export default function SignUpPage() {
                 )}
 
                 <div>
-                  <label className={labelCls}>{"// Full Name"}</label>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Alex Chen"
-                    className={field}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className={labelCls}>{"// Email"}</label>
+                  <label className={labelCls}>{"// Email Address"}</label>
                   <input
                     type="email"
                     value={email}
@@ -176,65 +155,27 @@ export default function SignUpPage() {
                     placeholder="you@sys.int"
                     className={field}
                     required
+                    autoFocus
                   />
                 </div>
-
-                <div>
-                  <label className={labelCls}>{"// Password"}</label>
-                  <div className="relative">
-                    <input
-                      type={showPw ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className={`${field} pr-11`}
-                      required
-                      minLength={6}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw((s) => !s)}
-                      aria-label={showPw ? "Hide password" : "Show password"}
-                      className="absolute right-0 top-0 flex h-full w-10 items-center justify-center border-l-2 border-foreground text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setAgree((a) => !a)}
-                  className="flex items-start gap-2 text-left"
-                >
-                  <span
-                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border-2 border-foreground transition-colors ${
-                      agree ? "bg-foreground text-background" : "bg-background"
-                    }`}
-                  >
-                    {agree && <Check size={11} strokeWidth={3} />}
-                  </span>
-                  <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground leading-relaxed">
-                    I agree to the terms of service and privacy protocol.
-                  </span>
-                </button>
 
                 <button
                   type="submit"
                   disabled={loading}
                   className="mt-2 flex w-full items-center justify-center gap-2 bg-foreground px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-background hover:bg-[#ea580c] hover:text-white transition-colors disabled:opacity-50"
                 >
-                  {loading ? "Creating Account..." : <>Create Account <ArrowRight size={13} strokeWidth={2} /></>}
+                  {loading ? "Sending Link..." : <>Send Reset Link <ArrowRight size={13} strokeWidth={2} /></>}
                 </button>
               </form>
 
               <div className="border-t-2 border-foreground px-6 py-4 text-center">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                  Have an account?{" "}
-                  <Link href="/signin" className="text-[#ea580c] hover:underline">
-                    Sign In
-                  </Link>
-                </span>
+                <Link
+                  href="/signin"
+                  className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft size={11} strokeWidth={2} />
+                  Back to Sign In
+                </Link>
               </div>
             </motion.div>
           )}
