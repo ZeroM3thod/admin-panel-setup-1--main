@@ -145,6 +145,10 @@ END $$;
 -- STEP 4: Create helper function
 -- ═══════════════════════════════════════════════════════════════
 
+-- Drop existing function first (prevents parameter name conflict)
+DROP FUNCTION IF EXISTS is_admin(uuid);
+
+-- Create function with new parameter name
 CREATE OR REPLACE FUNCTION is_admin(check_user_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN

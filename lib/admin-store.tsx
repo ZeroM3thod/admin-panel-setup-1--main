@@ -277,92 +277,232 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     })
   }, [supabase])
 
-  const addMainButton = useCallback((name: string, icon: string) => {
-    const id = `a${Date.now()}`
-    setAssets((prev) => [...prev, { id, name, icon, subButtons: [] }])
-    supabase.from("asset_main_buttons").insert({ id, name, icon }).then(({ error }) => {
-      if (error) console.error("Failed to add main button:", error)
-    })
-  }, [supabase])
-
-  const removeMainButton = useCallback((mainId: string) => {
-    setAssets((prev) => prev.filter((m) => m.id !== mainId))
-    supabase.from("asset_main_buttons").delete().eq("id", mainId).then(({ error }) => {
-      if (error) console.error("Failed to remove main button:", error)
-    })
-  }, [supabase])
-
-  const editMainButton = useCallback((mainId: string, name: string, icon: string) => {
-    setAssets((prev) =>
-      prev.map((m) => (m.id === mainId ? { ...m, name, icon } : m)),
-    )
-    supabase.from("asset_main_buttons").update({ name, icon }).eq("id", mainId).then(({ error }) => {
-      if (error) console.error("Failed to edit main button:", error)
-    })
-  }, [supabase])
-
-  const addSubButton = useCallback((mainId: string, sub: Omit<AssetSubButton, "id">) => {
-    const subId = `s${Date.now()}`
-    setAssets((prev) =>
-      prev.map((m) =>
-        m.id === mainId
-          ? { ...m, subButtons: [...m.subButtons, { ...sub, id: subId }] }
-          : m,
-      ),
-    )
-    supabase.from("asset_sub_buttons").insert({
-      id: subId,
-      main_button_id: mainId,
-      name: sub.name,
-      icon: sub.icon,
-      preview_link: sub.previewLink,
-      zip_link: sub.zipLink,
-      access: sub.access,
-    }).then(({ error }) => {
-      if (error) console.error("Failed to add sub button:", error)
-    })
-    for (const file of sub.codeFiles) {
-      supabase.from("code_files").insert({
-        sub_button_id: subId,
-        name: file.name,
-        code: file.code,
-      }).then(({ error }) => {
-        if (error) console.error("Failed to add code file:", error)
-      })
+  const addMainButton = useCallback(async (name: string, icon: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("asset_main_buttons")
+        .insert({ name, icon })
+        .select()
+        .single()
+      
+      if (error) {
+        console.error("Failed to add main button:", error)
+        return
+      }
+      
+      if (data) {
+        setAssets((prev) => [...prev, { id: data.id, name, icon, subButtons: [] }])
+      }
+    } catch (err) {
+      console.error("Error adding main button:", err)
     }
   }, [supabase])
 
-  const removeSubButton = useCallback((mainId: string, subId: string) => {
-    setAssets((prev) =>
-      prev.map((m) =>
-        m.id === mainId ? { ...m, subButtons: m.subButtons.filter((s) => s.id !== subId) } : m,
-      ),
-    )
-    supabase.from("asset_sub_buttons").delete().eq("id", subId).then(({ error }) => {
-      if (error) console.error("Failed to remove sub button:", error)
-    })
+  const removeMainButton = useCallback(async (mainId: string) => {
+    try {
+      setAssets((prev) => prev.filter((m) => m.id !== mainId))
+      
+      const { error } = await supabase.from("asset_main_buttons").delete().eq("id", mainId)
+      
+      if (error) {
+        console.error("Failed to remove main button:", error)
+        // Revert on error
+        const { data } = await supabase.from("asset_main_buttons").select("*")
+        if (data) {
+          const { data: subButtons } = await supabase.from("asset_sub_buttons").select("*")
+          const { data: codeFiles } = await supabase.from("code_files").select("*")
+          // Reload assets
+          const assetList: AssetMainButton[] = data.map((m: any) => {
+            const subs = (subButtons || []).filter((s: any) => s.main_button_id === m.id)
+            return {
+              id: m.id,
+              name: m.name,
+              icon: m.icon || "Boxes",
+              subButtons: subs.map((s: any) => {
+                const files = (codeFiles || []).filter((cf: any) => cf.sub_button_id === s.id)
+                return {
+                  id: s.id,
+                  name: s.name,
+                  icon: s.icon || "Square",
+                  previewLink: s.preview_link || "",
+                  zipLink: s.zip_link || "",
+                  codeFiles: files.map((f: any) => ({
+                    id: f.id,
+                    name: f.name,
+                    code: f.code,
+                  })),
+                  access: s.access || ["free"],
+                }
+              }),
+            }
+          })
+          setAssets(assetList)
+          saveToLS(LS_KEY_ASSETS, assetList)
+        }
+      }
+    } catch (err) {
+      console.error("Error removing main button:", err)
+    }
   }, [supabase])
 
-  const editSubButton = useCallback((mainId: string, subId: string, sub: Omit<AssetSubButton, "id">) => {
-    setAssets((prev) =>
-      prev.map((m) =>
-        m.id === mainId
-          ? {
-              ...m,
-              subButtons: m.subButtons.map((s) => (s.id === subId ? { ...sub, id: subId } : s)),
-            }
-          : m,
-      ),
-    )
-    supabase.from("asset_sub_buttons").update({
-      name: sub.name,
-      icon: sub.icon,
-      preview_link: sub.previewLink,
-      zip_link: sub.zipLink,
-      access: sub.access,
-    }).eq("id", subId).then(({ error }) => {
-      if (error) console.error("Failed to edit sub button:", error)
-    })
+  const editMainButton = useCallback(async (mainId: string, name: string, icon: string) => {
+    try {
+      setAssets((prev) =>
+        prev.map((m) => (m.id === mainId ? { ...m, name, icon } : m)),
+      )
+      
+      const { error } = await supabase
+        .from("asset_main_buttons")
+        .update({ name, icon })
+        .eq("id", mainId)
+      
+      if (error) {
+        console.error("Failed to edit main button:", error)
+      }
+    } catch (err) {
+      console.error("Error editing main button:", err)
+    }
+  }, [supabase])
+
+  const addSubButton = useCallback(async (mainId: string, sub: Omit<AssetSubButton, "id">) => {
+    try {
+      // Insert sub button first
+      const { data: subData, error: subError } = await supabase
+        .from("asset_sub_buttons")
+        .insert({
+          main_button_id: mainId,
+          name: sub.name,
+          icon: sub.icon,
+          preview_link: sub.previewLink,
+          zip_link: sub.zipLink,
+          access: sub.access,
+        })
+        .select()
+        .single()
+      
+      if (subError) {
+        console.error("Failed to add sub button:", subError)
+        return
+      }
+      
+      if (!subData) return
+      
+      const subId = subData.id
+      
+      // Insert code files
+      const codeFilePromises = sub.codeFiles.map((file) =>
+        supabase.from("code_files").insert({
+          sub_button_id: subId,
+          name: file.name,
+          code: file.code,
+        }).select().single()
+      )
+      
+      const codeFileResults = await Promise.all(codeFilePromises)
+      const insertedCodeFiles = codeFileResults
+        .filter(result => !result.error && result.data)
+        .map(result => ({
+          id: result.data!.id,
+          name: result.data!.name,
+          code: result.data!.code,
+        }))
+      
+      // Update local state with database IDs
+      setAssets((prev) =>
+        prev.map((m) =>
+          m.id === mainId
+            ? { 
+                ...m, 
+                subButtons: [...m.subButtons, { 
+                  ...sub, 
+                  id: subId,
+                  codeFiles: insertedCodeFiles
+                }] 
+              }
+            : m,
+        ),
+      )
+    } catch (err) {
+      console.error("Error adding sub button:", err)
+    }
+  }, [supabase])
+
+  const removeSubButton = useCallback(async (mainId: string, subId: string) => {
+    try {
+      setAssets((prev) =>
+        prev.map((m) =>
+          m.id === mainId ? { ...m, subButtons: m.subButtons.filter((s) => s.id !== subId) } : m,
+        ),
+      )
+      
+      const { error } = await supabase.from("asset_sub_buttons").delete().eq("id", subId)
+      
+      if (error) {
+        console.error("Failed to remove sub button:", error)
+      }
+    } catch (err) {
+      console.error("Error removing sub button:", err)
+    }
+  }, [supabase])
+
+  const editSubButton = useCallback(async (mainId: string, subId: string, sub: Omit<AssetSubButton, "id">) => {
+    try {
+      // Update sub button
+      const { error: subError } = await supabase
+        .from("asset_sub_buttons")
+        .update({
+          name: sub.name,
+          icon: sub.icon,
+          preview_link: sub.previewLink,
+          zip_link: sub.zipLink,
+          access: sub.access,
+        })
+        .eq("id", subId)
+      
+      if (subError) {
+        console.error("Failed to edit sub button:", subError)
+        return
+      }
+      
+      // Delete existing code files
+      await supabase.from("code_files").delete().eq("sub_button_id", subId)
+      
+      // Insert new code files
+      const codeFilePromises = sub.codeFiles.map((file) =>
+        supabase.from("code_files").insert({
+          sub_button_id: subId,
+          name: file.name,
+          code: file.code,
+        }).select().single()
+      )
+      
+      const codeFileResults = await Promise.all(codeFilePromises)
+      const insertedCodeFiles = codeFileResults
+        .filter(result => !result.error && result.data)
+        .map(result => ({
+          id: result.data!.id,
+          name: result.data!.name,
+          code: result.data!.code,
+        }))
+      
+      // Update local state
+      setAssets((prev) =>
+        prev.map((m) =>
+          m.id === mainId
+            ? {
+                ...m,
+                subButtons: m.subButtons.map((s) => 
+                  s.id === subId 
+                    ? { ...sub, id: subId, codeFiles: insertedCodeFiles } 
+                    : s
+                ),
+              }
+            : m,
+        ),
+      )
+    } catch (err) {
+      console.error("Error editing sub button:", err)
+    }
   }, [supabase])
 
   const submitPayment = useCallback((payment: Omit<Payment, "id" | "status" | "submittedAt">) => {
