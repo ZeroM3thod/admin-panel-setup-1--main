@@ -1,0 +1,16 @@
+# robots.txt for hasanlib.vercel.app
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /admin
+Disallow: /signin
+Disallow: /signup
+Disallow: /forget
+Disallow: /profile
+
+# Sitemap location
+Sitemap: https://hasanlib.vercel.app/sitemap.xml
+
+# Crawl delay (optional, adjust if needed)
+Crawl-delay: 1
