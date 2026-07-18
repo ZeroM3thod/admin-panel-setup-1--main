@@ -1,8 +1,16 @@
 "use client"
 
+import Link from "next/link"
 import { motion } from "framer-motion"
 
 const ease = [0.22, 1, 0.36, 1] as const
+
+const LINKS = [
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+  { label: "Status", href: "/status" },
+  { label: "GitHub", href: "https://github.com/hasan-lib" },
+]
 
 export function Footer() {
   return (
@@ -23,19 +31,36 @@ export function Footer() {
           </span>
         </div>
         <div className="flex items-center gap-6">
-          {["Privacy", "Terms", "Status", "GitHub"].map((link, i) => (
-            <motion.a
-              key={link}
-              href="#"
-              initial={{ opacity: 0, y: 6 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 + i * 0.06, duration: 0.4, ease }}
-              className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors duration-200"
-            >
-              {link}
-            </motion.a>
-          ))}
+          {LINKS.map((link, i) => {
+            const isExternal = link.href.startsWith("http")
+            return (
+              <motion.div
+                key={link.label}
+                initial={{ opacity: 0, y: 6 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 + i * 0.06, duration: 0.4, ease }}
+              >
+                {isExternal ? (
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    href={link.href}
+                    className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  >
+                    {link.label}
+                  </Link>
+                )}
+              </motion.div>
+            )
+          })}
         </div>
       </div>
     </motion.footer>
